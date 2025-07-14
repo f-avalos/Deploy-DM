@@ -40,8 +40,8 @@ prediction_count = 0
 def load_model():
     """Carga el modelo PKL al iniciar la aplicación"""
     global model, model_loaded_at
-    model_path = Config.MODEL_PATH
-    
+    model_path = 'best_model.pkl'  # Default model path, can be overridden by Config.MODEL_PATH
+
     if os.path.exists(model_path):
         try:
             with open(model_path, 'rb') as file:
