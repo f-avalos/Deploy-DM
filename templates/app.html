@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Predicción de Ataques al Corazón - Despliegue DM</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .main-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            margin: 2rem auto;
+            max-width: 900px;
+        }
+        
+        .header-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 20px 20px 0 0;
+            text-align: center;
+        }
+        
+        .form-section {
+            padding: 2rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-label {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 0.5rem;
+        }
+        
+        .form-select, .form-control {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 0.75rem;
+            transition: all 0.3s ease;
+        }
+        
+        .form-select:focus, .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        
+        .btn-predict {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 15px;
+            padding: 1rem 2rem;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            width: 100%;
+            color: white;
+        }
+        
+        .btn-predict:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+            color: white;
+        }
+        
+        .btn-predict:disabled {
+            opacity: 0.7;
+            transform: none;
+        }
+        
+        .result-card {
+            margin-top: 2rem;
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .alert {
+            border-radius: 15px;
+            border: none;
+            padding: 1.5rem;
+        }
+        
+        .progress {
+            height: 20px;
+            border-radius: 10px;
+        }
+        
+        .navbar {
+            background: rgba(255, 255, 255, 0.1) !important;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .navbar-brand {
+            color: white !important;
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+        
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .feature-card {
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-heartbeat me-2"></i>
+                Despliegue DM - Heart Attack Prediction
+            </a>
+            <div class="navbar-nav ms-auto">
+                <button class="btn btn-outline-light" onclick="showModelInfo()">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Info del Modelo
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay d-none">
+        <div class="text-center text-white">
+            <div class="loading-spinner mx-auto mb-3"></div>
+            <h5>Procesando predicción...</h5>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container">
+        <div class="main-container">
+            <!-- Header Section -->
+            <div class="header-section">
+                <h1 class="display-5 fw-bold mb-3">
+                    <i class="fas fa-heart-pulse me-3"></i>
+                    Predicción de Ataques al Corazón
+                </h1>
+                <p class="lead mb-0">
+                    Sistema de predicción basado en Machine Learning para evaluar el riesgo cardiovascular
+                </p>
+            </div>
+
+            <!-- Form Section -->
+            <div class="form-section">
+                <form id="predictionForm">
+                    <div class="row">
+                        <!-- Physical Activities -->
+                        <div class="col-md-6">
+                            <div class="feature-card">
+                                <div class="form-group">
+                                    <label for="PhysicalActivities" class="form-label">
+                                        <i class="fas fa-running me-2 text-primary"></i>
+                                        Realiza Actividades Físicas
+                                    </label>
+                                    <select class="form-select" id="PhysicalActivities" name="PhysicalActivities" required>
+                                        <option value="">Seleccione una opción...</option>
+                                        <option value="0">No realiza actividades físicas</option>
+                                        <option value="1">Sí realiza actividades físicas</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Alcohol Consumption -->
+                        <div class="col-md-6">
+                            <div class="feature-card">
+                                <div class="form-group">
+                                    <label for="AlcoholDrinkers" class="form-label">
+                                        <i class="fas fa-wine-glass me-2 text-warning"></i>
+                                        Consume Alcohol
+                                    </label>
+                                    <select class="form-select" id="AlcoholDrinkers" name="AlcoholDrinkers" required>
+                                        <option value="">Seleccione una opción...</option>
+                                        <option value="0">No consume alcohol</option>
+                                        <option value="1">Sí consume alcohol</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- Age Category -->
+                        <div class="col-md-6">
+                            <div class="feature-card">
+                                <div class="form-group">
+                                    <label for="ageCategoryGrouped" class="form-label">
+                                        <i class="fas fa-calendar-alt me-2 text-info"></i>
+                                        Categoría de Edad
+                                    </label>
+                                    <select class="form-select" id="ageCategoryGrouped" name="ageCategoryGrouped" required>
+                                        <option value="">Seleccione su rango de edad...</option>
+                                        <option value="0">18-44 años (Adulto joven)</option>
+                                        <option value="1">45-64 años (Adulto medio)</option>
+                                        <option value="2">65+ años (Adulto mayor)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Smoking Status -->
+                        <div class="col-md-6">
+                            <div class="feature-card">
+                                <div class="form-group">
+                                    <label for="SmokerStatusGrouped" class="form-label">
+                                        <i class="fas fa-smoking me-2 text-danger"></i>
+                                        Estado de Fumador
+                                    </label>
+                                    <select class="form-select" id="SmokerStatusGrouped" name="SmokerStatusGrouped" required>
+                                        <option value="">Seleccione su estado...</option>
+                                        <option value="0">Nunca fumó</option>
+                                        <option value="1">Ex-fumador</option>
+                                        <option value="2">Fumador actual</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- Diabetes Status -->
+                        <div class="col-md-6">
+                            <div class="feature-card">
+                                <div class="form-group">
+                                    <label for="HadDiabetesGrouped" class="form-label">
+                                        <i class="fas fa-syringe me-2 text-success"></i>
+                                        Estado de Diabetes
+                                    </label>
+                                    <select class="form-select" id="HadDiabetesGrouped" name="HadDiabetesGrouped" required>
+                                        <option value="">Seleccione su estado...</option>
+                                        <option value="0">No tiene diabetes</option>
+                                        <option value="1">Tiene diabetes</option>
+                                        <option value="2">Prediabetes</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Previous Heart Attack -->
+                        <div class="col-md-6">
+                            <div class="feature-card">
+                                <div class="form-group">
+                                    <label for="HadHeartAttack" class="form-label">
+                                        <i class="fas fa-heart-crack me-2 text-danger"></i>
+                                        Ataque al Corazón Previo
+                                    </label>
+                                    <select class="form-select" id="HadHeartAttack" name="HadHeartAttack" required>
+                                        <option value="">Seleccione una opción...</option>
+                                        <option value="0">No ha tenido ataques previos</option>
+                                        <option value="1">Sí ha tenido ataques previos</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-predict" id="submitBtn">
+                                <i class="fas fa-chart-line me-2"></i>
+                                Realizar Predicción
+                            </button>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Results Section -->
+                <div id="resultSection" class="d-none">
+                    <div class="result-card card">
+                        <div class="card-body">
+                            <h5 class="card-title mb-4">
+                                <i class="fas fa-chart-bar me-2"></i>
+                                Resultado de la Predicción
+                            </h5>
+                            <div id="resultContent"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Model Info Modal -->
+                <div class="modal fade" id="modelInfoModal" tabindex="-1">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">
+                                    <i class="fas fa-robot me-2"></i>
+                                    Información del Modelo
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body" id="modelInfoContent">
+                                <div class="text-center">
+                                    <div class="spinner-border" role="status">
+                                        <span class="visually-hidden">Cargando...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    
+    <!-- Custom JavaScript -->
+    <script>
+        // Global variables
+        const form = document.getElementById('predictionForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const resultSection = document.getElementById('resultSection');
+        const resultContent = document.getElementById('resultContent');
+
+        // Form validation
+        function validateForm() {
+            const requiredFields = form.querySelectorAll('[required]');
+            let isValid = true;
+            
+            requiredFields.forEach(field => {
+                if (!field.value.trim()) {
+                    isValid = false;
+                    field.classList.add('is-invalid');
+                } else {
+                    field.classList.remove('is-invalid');
+                }
+            });
+            
+            return isValid;
+        }
+
+        // Show loading state
+        function showLoading() {
+            loadingOverlay.classList.remove('d-none');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Procesando...';
+        }
+
+        // Hide loading state
+        function hideLoading() {
+            loadingOverlay.classList.add('d-none');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-chart-line me-2"></i>Realizar Predicción';
+        }
+
+        // Format result display
+        function displayResult(result) {
+            if (result.status === 'success') {
+                const isHighRisk = result.prediction === 1;
+                const alertClass = isHighRisk ? 'alert-danger' : 'alert-success';
+                const icon = isHighRisk ? 'fas fa-exclamation-triangle' : 'fas fa-check-circle';
+                const title = isHighRisk ? 'Alto Riesgo Detectado' : 'Bajo Riesgo Detectado';
+                
+                let probabilityHtml = '';
+                if (result.probability_attack !== null) {
+                    const percentage = (result.probability_attack * 100).toFixed(1);
+                    const safePercentage = (100 - percentage).toFixed(1);
+                    
+                    probabilityHtml = `
+                        <div class="mt-4">
+                            <h6 class="mb-3">
+                                <i class="fas fa-percentage me-2"></i>
+                                Análisis de Probabilidades
+                            </h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="text-center p-3 bg-danger bg-opacity-10 rounded">
+                                        <i class="fas fa-heart-crack text-danger fs-3 mb-2"></i>
+                                        <div class="fw-bold text-danger">${percentage}%</div>
+                                        <small class="text-muted">Riesgo de ataque</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="text-center p-3 bg-success bg-opacity-10 rounded">
+                                        <i class="fas fa-heart text-success fs-3 mb-2"></i>
+                                        <div class="fw-bold text-success">${safePercentage}%</div>
+                                        <small class="text-muted">Sin riesgo</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="progress mt-3" style="height: 25px;">
+                                <div class="progress-bar bg-danger" role="progressbar" 
+                                     style="width: ${percentage}%" 
+                                     aria-valuenow="${percentage}" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="100">
+                                    ${percentage}%
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                resultContent.innerHTML = `
+                    <div class="alert ${alertClass}" role="alert">
+                        <h4 class="alert-heading">
+                            <i class="${icon} me-2"></i>
+                            ${title}
+                        </h4>
+                        <p class="mb-0">${result.result}</p>
+                        ${probabilityHtml}
+                    </div>
+                `;
+            } else {
+                resultContent.innerHTML = `
+                    <div class="alert alert-danger" role="alert">
+                        <h4 class="alert-heading">
+                            <i class="fas fa-exclamation-circle me-2"></i>
+                            Error en el Procesamiento
+                        </h4>
+                        <p class="mb-0">${result.error || 'Error desconocido en la predicción'}</p>
+                    </div>
+                `;
+            }
+            
+            resultSection.classList.remove('d-none');
+            resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // Form submission handler
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            if (!validateForm()) {
+                alert('Por favor, complete todos los campos requeridos.');
+                return;
+            }
+            
+            showLoading();
+            
+            try {
+                const formData = new FormData(this);
+                const data = Object.fromEntries(formData);
+                
+                console.log('Datos enviados:', data);
+                
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                console.log('Respuesta recibida:', result);
+                displayResult(result);
+                
+            } catch (error) {
+                console.error('Error:', error);
+                displayResult({
+                    status: 'error',
+                    error: `Error de conexión: ${error.message}. Verifique que el servidor esté funcionando.`
+                });
+            } finally {
+                hideLoading();
+            }
+        });
+
+        // Model info functionality
+        async function showModelInfo() {
+            const modal = new bootstrap.Modal(document.getElementById('modelInfoModal'));
+            const content = document.getElementById('modelInfoContent');
+            
+            modal.show();
+            
+            try {
+                const response = await fetch('/model-info');
+                const info = await response.json();
+                
+                if (info.status === 'loaded') {
+                    content.innerHTML = `
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6><i class="fas fa-robot me-2"></i>Tipo de Modelo</h6>
+                                <p class="text-muted">${info.model_type}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <h6><i class="fas fa-code me-2"></i>Módulo</h6>
+                                <p class="text-muted">${info.model_module}</p>
+                            </div>
+                            ${info.n_features ? `
+                                <div class="col-md-6">
+                                    <h6><i class="fas fa-list me-2"></i>Número de Features</h6>
+                                    <p class="text-muted">${info.n_features}</p>
+                                </div>
+                            ` : ''}
+                            <div class="col-12">
+                                <h6><i class="fas fa-check-circle me-2"></i>Estado</h6>
+                                <span class="badge bg-success">Modelo Cargado Correctamente</span>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    content.innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            ${info.error}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                content.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Error al cargar información del modelo: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        // Initialize tooltips
+        document.addEventListener('DOMContentLoaded', function() {
+            // Enable Bootstrap tooltips
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        });
+    </script>
+</body>
+</html>
