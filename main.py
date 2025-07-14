@@ -323,15 +323,15 @@ def internal_error(error):
 
 if __name__ == '__main__':
     # Cargar modelo al iniciar
-    if load_model():
-        logger.info("Aplicación iniciada correctamente")
-        logger.info(f"Modo: {Config.FLASK_ENV}")
-        # For production deployment
-        if Config.is_production():
-            app.run(host='0.0.0.0', port=Config.PORT)
-        else:
-            app.run(debug=Config.DEBUG, host='0.0.0.0', port=Config.PORT)
+    load_model()
+    logger.info("Aplicación iniciada correctamente")
+    logger.info(f"Modo: {Config.FLASK_ENV}")
+    # For production deployment
+    if Config.is_production():
+        app.run(host='0.0.0.0', port=Config.PORT)
     else:
+        app.run(debug=Config.DEBUG, host='0.0.0.0', port=Config.PORT)
+    if not load_model():
         logger.error("No se pudo cargar el modelo. Verificar archivo best_model.pkl")
         print("ERROR: No se pudo cargar el modelo. La aplicación no se iniciará.")
         print("Verificar que el archivo 'best_model.pkl' existe en el directorio actual.")
