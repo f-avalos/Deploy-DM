@@ -331,22 +331,19 @@ def internal_error(error):
         'status': 'error'
     }), 500
 
-if __name__ == '__main__':
-    # Cargar modelo al iniciar
-    logger.info("Iniciando aplicación...")
-    if not load_model():
-        logger.warning("No se pudo cargar el modelo real. Usando modelo dummy para testing.")
-        create_dummy_model()
+logger.info("Iniciando aplicación...")
+if not load_model():
+    logger.warning("No se pudo cargar el modelo real. Usando modelo dummy para testing.")
 
-    if __name__ == '__main__':
-        logger.info("Aplicación iniciada correctamente")
-        logger.info(f"Modo: {Config.FLASK_ENV}")
-        # For production deployment
-        if Config.is_production():
-            app.run(host='0.0.0.0', port=Config.PORT)
-        else:
-            app.run(debug=Config.DEBUG, host='0.0.0.0', port=Config.PORT) 
+if __name__ == '__main__':
+    logger.info("Aplicación iniciada correctamente")
+    logger.info(f"Modo: {Config.FLASK_ENV}")
+    # For production deployment
+    if Config.is_production():
+        app.run(host='0.0.0.0', port=Config.PORT)
     else:
-        logger.error("No se pudo cargar el modelo. Verificar archivo best_model.pkl")
-        print("ERROR: No se pudo cargar el modelo. La aplicación no se iniciará.")
-        print("Verificar que el archivo 'best_model.pkl' existe en el directorio actual.")
+        app.run(debug=Config.DEBUG, host='0.0.0.0', port=Config.PORT) 
+else:
+    logger.error("No se pudo cargar el modelo. Verificar archivo best_model.pkl")
+    print("ERROR: No se pudo cargar el modelo. La aplicación no se iniciará.")
+    print("Verificar que el archivo 'best_model.pkl' existe en el directorio actual.")
