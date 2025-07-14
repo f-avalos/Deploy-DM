@@ -7,11 +7,30 @@ import os
 import logging
 from datetime import datetime
 
+try:
+    from config import Config
+except ImportError:
+    # Fallback configuration if config.py is not available
+    class Config:
+        FLASK_ENV = os.environ.get('FLASK_ENV', 'production')
+        DEBUG = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
+        MODEL_PATH = os.environ.get('MODEL_PATH', 'best_model.pkl')
+        PORT = int(os.environ.get('PORT', 5000))
+        LOG_LEVEL = os.environ.get('LOG_LEVEL', 'INFO')
+        
+        @staticmethod
+        def is_production():
+            return Config.FLASK_ENV == 'production'
+
 # Configure logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=getattr(logging, Config.LOG_LEVEL))
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+
+# Configuration for production
+app.config['ENV'] = Config.FLASK_ENV
+app.config['DEBUG'] = Config.DEBUG
 
 # Variable global para almacenar el modelo
 model = None
@@ -21,7 +40,7 @@ prediction_count = 0
 def load_model():
     """Carga el modelo PKL al iniciar la aplicación"""
     global model, model_loaded_at
-    model_path = 'best_model.pkl'  # Cambia por la ruta de tu modelo
+    model_path = Config.MODEL_PATH
     
     if os.path.exists(model_path):
         try:
@@ -77,7 +96,9 @@ def health_check():
     status = {
         "status": "healthy" if model is not None else "unhealthy",
         "model_loaded": model is not None,
-        "timestamp": datetime.now().isoformat()
+        "environment": Config.FLASK_ENV,
+        "timestamp": datetime.now().isoformat(),
+        "version": "1.0.0"
     }
     
     status_code = 200 if model is not None else 503
@@ -237,6 +258,8 @@ def model_info():
             'status': 'loaded',
             'loaded_at': model_loaded_at.isoformat() if model_loaded_at else None,
             'prediction_count': prediction_count,
+            'environment': Config.FLASK_ENV,
+            'debug_mode': Config.DEBUG,
             'form_features': [
                 'PhysicalActivities', 'AlcoholDrinkers', 'ageCategoryGrouped', 
                 'SmokerStatusGrouped', 'HadDiabetesGrouped', 'HadHeartAttack'
@@ -302,7 +325,12 @@ if __name__ == '__main__':
     # Cargar modelo al iniciar
     if load_model():
         logger.info("Aplicación iniciada correctamente")
-        app.run(debug=True, host='0.0.0.0', port=5000)
+        logger.info(f"Modo: {Config.FLASK_ENV}")
+        # For production deployment
+        if Config.is_production():
+            app.run(host='0.0.0.0', port=Config.PORT)
+        else:
+            app.run(debug=Config.DEBUG, host='0.0.0.0', port=Config.PORT)
     else:
         logger.error("No se pudo cargar el modelo. Verificar archivo best_model.pkl")
         print("ERROR: No se pudo cargar el modelo. La aplicación no se iniciará.")

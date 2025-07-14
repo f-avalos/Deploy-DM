@@ -62,20 +62,60 @@ Aplicación web de predicción de ataques al corazón utilizando Machine Learnin
 
 3. **Instalar dependencias**
    ```bash
-   pip install -r requeriments.txt
+   pip install -r requirements.txt
    ```
 
-4. **Verificar modelo**
+4. **Configurar variables de entorno (opcional para desarrollo local)**
+   ```bash
+   # Copiar el archivo de ejemplo
+   cp .env.example .env
+   
+   # Editar .env según necesidades
+   ```
+
+5. **Verificar modelo**
    - Asegúrese de que `best_model.pkl` esté en el directorio raíz
    - El modelo debe ser compatible con scikit-learn
 
-5. **Ejecutar la aplicación**
+6. **Ejecutar la aplicación**
    ```bash
    python main.py
    ```
 
-6. **Acceder a la aplicación**
+7. **Acceder a la aplicación**
    - Abrir navegador web en: `http://127.0.0.1:5000`
+
+## 🚀 Despliegue en Render
+
+### Preparación para Despliegue
+
+El proyecto incluye todos los archivos necesarios para el despliegue en Render:
+
+- `Procfile` - Comando de inicio para Render
+- `runtime.txt` - Versión de Python
+- `requirements.txt` - Dependencias (incluye gunicorn)
+- `RENDER_DEPLOYMENT.md` - Guía detallada de despliegue
+
+### Variables de Entorno para Render
+
+Configure las siguientes variables de entorno en su dashboard de Render:
+
+| Variable | Valor | Descripción |
+|----------|-------|-------------|
+| `FLASK_ENV` | `production` | Modo de Flask |
+| `FLASK_DEBUG` | `false` | Desactiva debug en producción |
+| `MODEL_PATH` | `best_model.pkl` | Ruta del modelo ML |
+
+### Pasos de Despliegue
+
+1. **Subir código a GitHub/GitLab**
+2. **Conectar repositorio a Render**
+3. **Configurar variables de entorno**
+4. **Establecer comandos de construcción e inicio**:
+   - Build Command: `pip install -r requirements.txt`
+   - Start Command: `gunicorn main:app --host=0.0.0.0 --port=$PORT`
+
+Para más detalles, consulte `RENDER_DEPLOYMENT.md`.
 
 ## 📡 API Endpoints
 
@@ -135,14 +175,19 @@ python test_app.py
 
 ```
 Deploy-DM/
-├── main.py                 # Aplicación Flask principal
-├── best_model.pkl         # Modelo de ML entrenado
-├── test_app.py            # Script de pruebas
-├── requeriments.txt       # Dependencias Python
-├── README.md              # Documentación
+├── main.py                    # Aplicación Flask principal
+├── best_model.pkl            # Modelo de ML entrenado
+├── test_app.py               # Script de pruebas
+├── requirements.txt          # Dependencias Python (actualizado)
+├── Procfile                  # Comando de inicio para Render
+├── runtime.txt               # Versión de Python para Render
+├── .env.example              # Variables de entorno de ejemplo
+├── .gitignore                # Archivos a ignorar en Git
+├── README.md                 # Documentación
+├── RENDER_DEPLOYMENT.md      # Guía de despliegue
 ├── templates/
-│   └── app.html          # Template unificado (HTML + CSS + JS)
-└── __pycache__/          # Cache de Python
+│   └── app.html             # Template unificado (HTML + CSS + JS)
+└── __pycache__/             # Cache de Python
 ```
 
 ## 🔧 Mejoras Implementadas
