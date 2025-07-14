@@ -114,7 +114,28 @@ After deployment, test these endpoints:
 
 ## Troubleshooting Common Issues
 
-### 1. Model Loading Errors
+### 1. Build Failures with Python Version Conflicts
+
+**Error:** `BackendUnavailable: Cannot import 'setuptools.build_meta'` or numpy compilation errors
+
+**Solutions:**
+- Ensure Python version in `runtime.txt` is compatible (use Python 3.12.x)
+- Use compatible package versions in `requirements.txt`
+- If still failing, try the alternative requirements files:
+  - `requirements-flexible.txt` - with version ranges
+  - `requirements-locked.txt` - with exact tested versions
+
+**Quick Fix:** Replace your `requirements.txt` content with:
+```
+Flask==3.1.1
+scikit-learn==1.4.2
+numpy==1.26.4
+requests==2.32.3
+gunicorn==23.0.0
+python-dotenv==1.0.1
+```
+
+### 2. Model Loading Errors
 ```
 ERROR: No se pudo cargar el modelo
 ```
